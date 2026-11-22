@@ -13,25 +13,27 @@ only** — the source is private.
 **[Download ZappCode-1.0.apk](../../releases/latest)**
 
 ```
-version   1.0  (versionCode 4)
-size      20 478 221 B
-sha256    397dd8110847d35c91ff3753e5fbf93b469fa8a519a9ca4c864f2a3ec31a5d63
+version   1.0  (versionCode 6)
+size      122 227 335 B
+sha256    f4b196382468d35204dd0eeff1c677e73429b21d23b0f2e2eec8ba52d3f2baff
 signer    CN=ZappCode  (private key — not the shared Android debug key)
 ```
 
 Check the file you downloaded matches that hash before installing.
+
+Termux is **inside this APK** (F-Droid 0.118, 101 739 523 B), so there is nothing else to download
+and no store to visit. The app installs it for you.
 
 ## Requirements
 
 | What | Why |
 | --- | --- |
 | Android 8.0 (API 26) or newer | minimum supported version |
-| **Termux** from F-Droid | runs the OpenCode server on the phone |
-| ~150 MB free space | the app plus the server binary |
+| ~500 MB free space | the app, the Termux it installs, and the engine |
 | A network route | Wi-Fi or mobile data; the Guard provides the tunnel |
 
-Termux from the **Play Store is not supported** — that build is abandoned and its paths differ.
-Use the F-Droid build.
+Nothing else. Termux ships inside the app, and the engine is fetched automatically on first
+start.
 
 ---
 
@@ -56,11 +58,15 @@ The app walks you through three things, in order:
 plain address is never written to disk — it lives in memory for the length of that screen and is
 dropped when it closes.
 
-**3. Termux access.** Android asks whether ZappCode may run commands in Termux. **Allow it.** The
-app needs it to start the server. If you deny it, the app can start nothing and will show
-*"Access ended"*.
+**3. Termux access.** The app carries Termux inside it. Tap **Install Termux (bundled)** — Android
+will ask once to allow installs from ZAPP, then the installer opens. Install it, come back, and the
+app flips to *installed* by itself. Then tap **Allow ZAPP to run commands**: that permission is what
+lets ZAPP start the server. If you deny it, the app can start nothing and will show *"Access ended"*.
 
 Your device token is generated on the phone at this point. It never leaves the device.
+
+On first start the app also fetches the engine (about 121 MB) into Termux and installs
+`glibc-runner` if Termux does not have it yet. That happens once.
 
 ---
 
