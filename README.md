@@ -13,11 +13,12 @@ only** — the source is private.
 **[Download ZappCode-1.0.apk](../../releases/latest)**
 
 ```
-version   1.0  (versionCode 20)
-size      134396547 B
-sha256    74305b56be8e977d4440f55e1b892b0d3af8b683acfbbf3e20b757daad2fde23
+version   1.0  (versionCode 21)
+size      134398567 B
+sha256    47df702be6df53d27d0a309fabcf684c5670e7a631046e782a8c8e3233bf5e5c
 signer    CN=ZappCode  (private key - not the shared Android debug key)
 termux    F-Droid 0.118.3 bundled  113 880 067 B
+engine    fetched on first run  121 172 970 B
 ```
 
 Check the file you downloaded matches that hash before installing.
