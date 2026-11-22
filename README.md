@@ -12,12 +12,12 @@ only** — the source is private.
 
 **[Download ZappCode-1.0.apk](../../releases/latest)**
 
-```
-version   1.0  (versionCode 6)
-size      122 227 335 B
-sha256    f4b196382468d35204dd0eeff1c677e73429b21d23b0f2e2eec8ba52d3f2baff
-signer    CN=ZappCode  (private key — not the shared Android debug key)
-```
+``
+version   1.0  (versionCode 18)
+size      122252043 B
+sha256    6e0b517dd282271202d1b8417bb029c6fab29c88a2571ef6a0bec2fee4f16ba9
+signer    CN=ZappCode  (private key - not the shared Android debug key)
+``
 
 Check the file you downloaded matches that hash before installing.
 
