@@ -4,27 +4,36 @@
 
 ZappCode is an Android client for an OpenCode server, with its own interface and its own network
 guard. The design, the branding and the tunnel are ZAPP's. This repository holds **downloads
-only** — the source is private.
+only** â€” the APK and its source archive.
 
 ---
 
 ## Download
 
-**[Download ZappCode-1.0.apk](../../releases/latest)**
+**[Download ZappCode-1.0.94.apk](../../releases/latest)**
 
 ```
-version   1.0  (versionCode 21)
-size      134398567 B
-sha256    47df702be6df53d27d0a309fabcf684c5670e7a631046e782a8c8e3233bf5e5c
-signer    CN=ZappCode  (private key - not the shared Android debug key)
-termux    F-Droid 0.118.3 bundled  113 880 067 B
-engine    fetched on first run  121 172 970 B
+version   1.0.94  (versionCode 95)
+size      134502515 B
+sha256    7ef8c397115dd4b07631bf1cebb77eb29ce3a3d38b7181132f8494d6f1d89c1f
+signer    CN=ZappCode  (private key â€” not the shared Android debug key)
+termux    F-Droid 0.118.3 bundled   113 880 067 B
+engine    fetched on first run      121 172 970 B
 ```
 
 Check the file you downloaded matches that hash before installing.
 
-Termux is **inside this APK** (F-Droid 0.118, 101 739 523 B), so there is nothing else to download
-and no store to visit. The app installs it for you.
+Termux is **inside this APK**, so there is nothing else to download and no store to visit. The app
+unpacks it and hands it to Android's installer for you.
+
+## What's new in 1.0.94
+
+- **Every download now reports its own exact size.** Termux unpacking shows `x.x of 113.9 MB`, the
+  guard lane `x.x of 0.4 MB`, the engine `x.x of 121.1 MB`. Before this build the lane's 403,072 B
+  was printed against the engine's 121.1 MB, which read as a stuck `0.4 MB`.
+- **The bar moves during every byte-counted stage**, not only while the engine archive lands, and
+  byte stages refresh every 2 s instead of every 5 s.
+- **Sign in with OpenCode** from the quota card: device-code flow, same copy as the desktop client.
 
 ## Requirements
 
@@ -41,38 +50,46 @@ start.
 
 ## Install
 
-1. Download `ZappCode-1.0.apk`.
+1. Download `ZappCode-1.0.94.apk`.
 2. Open it. Android will say *"For your security, your phone is not allowed to install unknown
    apps from this source."*
-3. Tap **Settings** → turn on **Allow from this source** → back → **Install**.
+3. Tap **Settings** â†’ turn on **Allow from this source** â†’ back â†’ **Install**.
 4. Open **ZappCode**.
 
 That warning appears for every app that does not come from the Play Store. It is not a sign the
 file is damaged.
 
+**Updating:** install over the old version. Do not uninstall first â€” uninstalling deletes your
+sessions' local state and the engine inside Termux.
+
 ## First run
 
-The app walks you through three things, in order:
+The app walks you through four things, in order, and each step ticks only when the phone proves it:
 
-**1. Consent.** Read it and accept. Nothing is stored before this.
+**1. Install Termux.** The app carries Termux (F-Droid 0.118.3, 113 880 067 B) inside itself. Tap
+**Install Termux (bundled)** â€” Android asks once to allow installs from ZAPP, then the installer
+opens. The screen shows the unpack as it happens: `42.7 of 113.9 MB`. Install it, come back, and
+the step flips to *installed* by itself.
 
-**2. Identity.** The app derives an identity from your address and keeps only a hash of it. The
-plain address is never written to disk — it lives in memory for the length of that screen and is
-dropped when it closes.
+**2. Allow ZAPP to run commands.** `com.termux.permission.RUN_COMMAND` is what lets ZAPP start the
+server. If you deny it, the app can start nothing and will show *"Access ended"*.
 
-**3. Termux access.** The app carries Termux inside it. Tap **Install Termux (bundled)** — Android
-will ask once to allow installs from ZAPP, then the installer opens. Install it, come back, and the
-app flips to *installed* by itself. Then tap **Allow ZAPP to run commands**: that permission is what
-lets ZAPP start the server. If you deny it, the app can start nothing and will show *"Access ended"*.
+**3. Paste one line in Termux.** Termux only accepts commands from other apps when
+`allow-external-apps=true` is in `~/.termux/termux.properties`. Android does not let one app write
+another app's private home, so this is the single thing the app cannot do for you. Tap **Copy
+line**, open Termux, paste it, press Enter. It is one line, once per Termux install, and it takes
+effect on the very next command â€” no Termux restart. The screen then probes and turns green.
+
+**4. Start the engine.** The first run downloads the engine archive (121 172 970 B) into Termux,
+unpacks it, installs `glibc-runner`, and starts the server. The screen shows the real stage, the
+real bytes on disk, and the last lines Termux printed. This happens once; every later start takes
+seconds.
 
 Your device token is generated on the phone at this point. It never leaves the device.
 
-On first start the app also fetches the engine (about 121 MB) into Termux and installs
-`glibc-runner` if Termux does not have it yet. That happens once.
-
 ---
 
-## Guard — get a working route
+## Guard â€” get a working route
 
 Open **Guard**.
 
@@ -90,9 +107,9 @@ next starts:
 When it finishes you have a verified Cloudflare WARP address and the tab shows your public `/64`.
 
 **Rotate /64 Now** gives you a different address from the warm pool. Rotation is deliberately
-separate from Repair — repairing a broken route and changing identity are different decisions.
+separate from Repair â€” repairing a broken route and changing identity are different decisions.
 
-## Chat — talk to the agent
+## Chat â€” talk to the agent
 
 Open **Chat**.
 
@@ -110,12 +127,18 @@ What you will see inline:
 | Diff rows | exactly what changed, file by file |
 | Permission cards | the agent is asking before it acts |
 
-## Long commands — move them to the background
+## Signing in
+
+The quota card on the Guard screen carries **Sign in with OpenCode**. It opens the console with a
+device code already in the link; confirm there and the card flips off `pending` on its own. No key
+to paste, no account file to copy.
+
+## Long commands â€” move them to the background
 
 When the agent starts something slow, tap **Move to background** on the running card.
 
 The command keeps running. The turn stops being pinned to it, so you can keep chatting. Everything
-detached lives in the **Shell** sheet — reachable from the chip above the composer.
+detached lives in the **Shell** sheet â€” reachable from the chip above the composer.
 
 ## Export and import
 
@@ -129,19 +152,24 @@ Sessions export to `Download/ZAPP/` as JSON.
 
 ## Troubleshooting
 
-**"Access ended — this device is no longer allowed on the server"**
+**"Access ended â€” this device is no longer allowed on the server"**
 The server on port 4096 authenticates with your app's device token. If a server from an older
-install is still running, it holds the *old* token and refuses the new app. Build 4 fixes this:
-the launcher now replaces a server whose password does not match. If you still see it, open Termux
-and run `pkill -f "opencode serve"`, then reopen ZappCode.
+install is still running, it holds the *old* token and refuses the new app. The launcher replaces a
+server whose password does not match. If you still see it, open Termux and run
+`pkill -f "opencode serve"`, then reopen ZappCode.
 
 **"Server unreachable"**
 No route. Open **Guard** and run **Repair (one tap)**. Nothing was deleted.
 
+**Step 4 says `nothing downloaded yet` and never changes**
+Termux cannot read the staged scripts. That is almost always a missing storage grant: Android
+Settings â†’ Apps â†’ Termux â†’ Permissions â†’ **Files and media: allow all**, then reopen ZappCode. The
+boot log at `Download/zapp_boot.log` shows the exact line that failed.
+
 **Guard repair stops at a stage**
 Each stage has to prove itself, so a stop means that stage failed. Run it again; a route that
 failed verification once usually passes on the second attempt. If it fails on the same stage twice,
-the tunnel is up but the exit is not verified — rotate the `/64` and repair again.
+the tunnel is up but the exit is not verified â€” rotate the `/64` and repair again.
 
 **Replies stop mid-answer**
 The app watches for a dead stream and recovers on its own. If the turn ends without an answer,
@@ -155,7 +183,9 @@ send again; the session state is on the server, not in the app.
 - Terminal / PTY tab with an xterm-compatible renderer
 - Guard: connect, disconnect, rotate `/64`, one-tap repair that proves every stage
 - Warm pool of registered WARP identities
-- Background shells — move running work away without stopping it
+- Exact-size progress for Termux unpacking, the guard lane and the engine archive
+- OpenCode account sign-in (device code) from the quota card
+- Background shells â€” move running work away without stopping it
 - Session export / import, 1 GB per file, unlimited count
 - In-app notifications only, by design
 
@@ -165,6 +195,8 @@ send again; the session state is on the server, not in the app.
   no plaintext script of any kind.
 - The release build is not debuggable: no `run-as`, no debugger attach.
 - The APK is signed with a private key, so a modified build cannot install as an update over it.
+- The Termux copy bundled here is unmodified F-Droid 0.118.3, verified by SHA-256 before it is
+  offered to the installer.
 - Not affiliated with OpenCode, Cloudflare, or any other project named here.
 
 ## Community
