@@ -4,7 +4,7 @@
 
 ZappCode is an Android client for an OpenCode server, with its own interface and its own network
 guard. The design, the branding and the tunnel are ZAPP's. This repository holds **downloads
-only** â€” the APK and its source archive.
+only** — the APK and its source archive.
 
 ---
 
@@ -16,7 +16,7 @@ only** â€” the APK and its source archive.
 version   1.0.94  (versionCode 95)
 size      134502515 B
 sha256    7ef8c397115dd4b07631bf1cebb77eb29ce3a3d38b7181132f8494d6f1d89c1f
-signer    CN=ZappCode  (private key â€” not the shared Android debug key)
+signer    CN=ZappCode  (private key — not the shared Android debug key)
 termux    F-Droid 0.118.3 bundled   113 880 067 B
 engine    fetched on first run      121 172 970 B
 ```
@@ -53,13 +53,13 @@ start.
 1. Download `ZappCode-1.0.94.apk`.
 2. Open it. Android will say *"For your security, your phone is not allowed to install unknown
    apps from this source."*
-3. Tap **Settings** â†’ turn on **Allow from this source** â†’ back â†’ **Install**.
+3. Tap **Settings** → turn on **Allow from this source** → back → **Install**.
 4. Open **ZappCode**.
 
 That warning appears for every app that does not come from the Play Store. It is not a sign the
 file is damaged.
 
-**Updating:** install over the old version. Do not uninstall first â€” uninstalling deletes your
+**Updating:** install over the old version. Do not uninstall first — uninstalling deletes your
 sessions' local state and the engine inside Termux.
 
 ## First run
@@ -67,7 +67,7 @@ sessions' local state and the engine inside Termux.
 The app walks you through four things, in order, and each step ticks only when the phone proves it:
 
 **1. Install Termux.** The app carries Termux (F-Droid 0.118.3, 113 880 067 B) inside itself. Tap
-**Install Termux (bundled)** â€” Android asks once to allow installs from ZAPP, then the installer
+**Install Termux (bundled)** — Android asks once to allow installs from ZAPP, then the installer
 opens. The screen shows the unpack as it happens: `42.7 of 113.9 MB`. Install it, come back, and
 the step flips to *installed* by itself.
 
@@ -78,7 +78,7 @@ server. If you deny it, the app can start nothing and will show *"Access ended"*
 `allow-external-apps=true` is in `~/.termux/termux.properties`. Android does not let one app write
 another app's private home, so this is the single thing the app cannot do for you. Tap **Copy
 line**, open Termux, paste it, press Enter. It is one line, once per Termux install, and it takes
-effect on the very next command â€” no Termux restart. The screen then probes and turns green.
+effect on the very next command — no Termux restart. The screen then probes and turns green.
 
 **4. Start the engine.** The first run downloads the engine archive (121 172 970 B) into Termux,
 unpacks it, installs `glibc-runner`, and starts the server. The screen shows the real stage, the
@@ -89,7 +89,7 @@ Your device token is generated on the phone at this point. It never leaves the d
 
 ---
 
-## Guard â€” get a working route
+## Guard — get a working route
 
 Open **Guard**.
 
@@ -107,9 +107,9 @@ next starts:
 When it finishes you have a verified Cloudflare WARP address and the tab shows your public `/64`.
 
 **Rotate /64 Now** gives you a different address from the warm pool. Rotation is deliberately
-separate from Repair â€” repairing a broken route and changing identity are different decisions.
+separate from Repair — repairing a broken route and changing identity are different decisions.
 
-## Chat â€” talk to the agent
+## Chat — talk to the agent
 
 Open **Chat**.
 
@@ -133,12 +133,12 @@ The quota card on the Guard screen carries **Sign in with OpenCode**. It opens t
 device code already in the link; confirm there and the card flips off `pending` on its own. No key
 to paste, no account file to copy.
 
-## Long commands â€” move them to the background
+## Long commands — move them to the background
 
 When the agent starts something slow, tap **Move to background** on the running card.
 
 The command keeps running. The turn stops being pinned to it, so you can keep chatting. Everything
-detached lives in the **Shell** sheet â€” reachable from the chip above the composer.
+detached lives in the **Shell** sheet — reachable from the chip above the composer.
 
 ## Export and import
 
@@ -152,7 +152,7 @@ Sessions export to `Download/ZAPP/` as JSON.
 
 ## Troubleshooting
 
-**"Access ended â€” this device is no longer allowed on the server"**
+**"Access ended — this device is no longer allowed on the server"**
 The server on port 4096 authenticates with your app's device token. If a server from an older
 install is still running, it holds the *old* token and refuses the new app. The launcher replaces a
 server whose password does not match. If you still see it, open Termux and run
@@ -163,13 +163,13 @@ No route. Open **Guard** and run **Repair (one tap)**. Nothing was deleted.
 
 **Step 4 says `nothing downloaded yet` and never changes**
 Termux cannot read the staged scripts. That is almost always a missing storage grant: Android
-Settings â†’ Apps â†’ Termux â†’ Permissions â†’ **Files and media: allow all**, then reopen ZappCode. The
+Settings → Apps → Termux → Permissions → **Files and media: allow all**, then reopen ZappCode. The
 boot log at `Download/zapp_boot.log` shows the exact line that failed.
 
 **Guard repair stops at a stage**
 Each stage has to prove itself, so a stop means that stage failed. Run it again; a route that
 failed verification once usually passes on the second attempt. If it fails on the same stage twice,
-the tunnel is up but the exit is not verified â€” rotate the `/64` and repair again.
+the tunnel is up but the exit is not verified — rotate the `/64` and repair again.
 
 **Replies stop mid-answer**
 The app watches for a dead stream and recovers on its own. If the turn ends without an answer,
@@ -185,7 +185,7 @@ send again; the session state is on the server, not in the app.
 - Warm pool of registered WARP identities
 - Exact-size progress for Termux unpacking, the guard lane and the engine archive
 - OpenCode account sign-in (device code) from the quota card
-- Background shells â€” move running work away without stopping it
+- Background shells — move running work away without stopping it
 - Session export / import, 1 GB per file, unlimited count
 - In-app notifications only, by design
 
