@@ -10,12 +10,12 @@ the APK, its bundled Termux and the engine archive.
 
 ## Download
 
-**[Download ZappCode-1.0.97.apk](../../releases/latest)**
+**[Download the latest ZappCode](../../releases/latest)**
 
 ```
-version   1.0.97  (versionCode 98)
-size      134512299 B
-sha256    d74c6d809be6edc24da342b4314a051ae4e3faab4b70ebb976f304c743c45125
+version   1.0.167  (versionCode 167)
+size      134821591 B
+sha256    5443b0eae5d1e51ee14630304c65cca9471e8a8cb4400b25385b182122fadee8
 signer    CN=ZappCode  (private key - not the shared Android debug key)
 termux    F-Droid 0.118.3 bundled   113 880 067 B
 engine    fetched on first run      121 172 970 B
@@ -26,19 +26,92 @@ Check the file you downloaded matches that hash before installing.
 Termux is **inside this APK**, so there is nothing else to download and no store to visit. The app
 unpacks it and hands it to Android's installer for you.
 
-## What's new in 1.0.97
+Every release is published here and nowhere else. There is no Play Store listing, no mirror, and no
+third-party build.
 
-- **Built and signed in the cloud.** Every release from this one on is compiled, signed, verified
-  and published by a workflow in this repository, so a version can ship without a PC in the loop.
-- **The lane payloads were re-sealed with a fresh key.** The two scripts the app hands to Termux
-  are shipped as AES-256-GCM blobs and that key was rotated for this version. The plaintext is
-  never written to disk, so nothing in the repository or the archive gives it away.
-- **The published source archive is scanned before upload.** It is refused unless the entries are
-  clean, and the size of the published APK is re-checked against the build.
-- Carried over from 1.0.95: setup on a phone that has never granted Termux storage (the two scripts
-  are handed over `127.0.0.1`, measured on a wiped device: `serve.sh` 39 769 B,
-  `zapp_proxy.py` 52 693 B), exact-size counters for every stage (`x.x of 113.9 MB`,
-  `x.x of 0.4 MB`, `x.x of 121.1 MB`) and OpenCode sign-in from the quota card.
+## Updates
+
+ZappCode asks the release channel once each time it starts, and tells you when a newer version
+exists. It never installs anything behind your back.
+
+- **On the first open after a release**, a dialog states the installed version, the new version, the
+  download size and what changed. **Update now** continues to the download sheet; **Later** means
+  that release is never announced again.
+- **The version is always visible** in the title strip, and beside **Settings** in the sidebar. A dot
+  next to it means a release is waiting.
+- Nothing downloads until you tap **Download**; nothing installs until you tap **Install** and
+  confirm in Android's installer.
+- **Your data survives.** The installer replaces the APK in place. It does not uninstall, so
+  sessions, settings, the engine and the guard lane all stay exactly where they are.
+- **Download new versions automatically** can be switched on in that sheet. The app then fetches the
+  APK in the background and checks its SHA-256 before offering it; Android still asks before
+  installing, because that confirmation cannot be skipped by any app.
+- A download is discarded unless its SHA-256 matches the hash published in the release notes, so a
+  cut-off or swapped file never reaches the installer.
+
+## What's new in 1.0.167
+
+### The free limit is a clock, not an address
+
+A free-tier refusal is an account-level budget, not a property of the network address you are on. The
+app used to treat it as an address problem and rotate the tunnel every time it appeared, which bought
+nothing and cost an identity each time. Measured on one evening: two different `/64`s refused twelve
+minutes apart, roughly four hours stated on both, and not one completed reply in between.
+
+- A free-limit refusal that states a window longer than 15 minutes is now held, not hopped. The
+  prompt is kept and continues by itself when the stated window passes.
+- The automatic resume reads that same window and does nothing until it opens, instead of firing
+  every five seconds into a refusal it cannot win.
+- Your own taps are never gated. Only the automatic resend waits.
+
+### "Verified" but nothing arrives
+
+The tunnel could report a verified WARP address while carrying nothing, and every repair path
+refused to touch it. The cause was in how a live turn was recognised: a refused turn retries every
+few seconds, and each retry counted as evidence that the turn was still producing - so the "live
+turn" clock never aged out and the dead tunnel was never rebuilt.
+
+- A failed step is no longer treated as a live turn.
+- A turn that has failed and produced nothing for 20 seconds stops blocking repairs. A retry that
+  actually produces text re-arms it, so real work is never cut.
+
+### Boot no longer rebuilds the identity a dozen times
+
+On a fresh start the app could tear down and rebuild its tunnel repeatedly - measured twelve full
+identity rebuilds in 68 seconds on one launch, with the screen stuck on "verifying" throughout.
+
+- The re-roll bound is now a real bound. It used to reset itself the moment it was reached, which
+  made it infinite.
+- Re-rolling the *edge* to escape a used *`/64`* is gone. The `/64` is bound to the tunnel interface,
+  not to the edge, so that could never have worked.
+- While a free-limit window is open, no prefix is treated as used up - the address was never the
+  problem.
+
+### Steering
+
+Sending while the agent is still answering now follows the setting you chose.
+
+- **Steer** sends without interrupting the running turn. **Queue** waits its turn. The default is
+  steer, matching the desktop.
+- A turn the app did not start - resumed after a limit, after a compaction, or on relaunch - now
+  looks live, so a message typed during it steers instead of interrupting.
+
+### Compaction
+
+Compaction now uses the engine's own ceiling instead of a guessed ratio: 85% of the model's context
+window, computed from the same reserve the server uses. A conversation that reaches that ceiling is
+compacted before the send rather than refused after it.
+
+### Around the app
+
+- An **update dialog** on the first open after a release, with the version, the size and what
+  changed.
+- The **version** shown in the title strip and in the sidebar, read from the installed package so it
+  can never drift from the build.
+- An **update row beside Settings**, and a dot in the title strip when a release is waiting.
+- **Download**, **Community** and **Support** sections in About, all pointing at real addresses.
+- Fresh-install onboarding verified end to end on a wiped device: the app installed its bundled
+  Termux by itself, with no browser and no store visit.
 
 ## Requirements
 
@@ -55,7 +128,7 @@ start.
 
 ## Install
 
-1. Download `ZappCode-1.0.95.apk`.
+1. Download the APK from [the latest release](../../releases/latest).
 2. Open it. Android will say *"For your security, your phone is not allowed to install unknown
    apps from this source."*
 3. Tap **Settings** -> turn on **Allow from this source** -> back -> **Install**.
@@ -114,6 +187,9 @@ When it finishes you have a verified Cloudflare WARP address and the tab shows y
 **Rotate /64 Now** gives you a different address from the warm pool. Rotation is deliberately
 separate from Repair - repairing a broken route and changing identity are different decisions.
 
+A route is only "verified" when a real request leaves through it and comes back. A handshake alone
+is not proof, and the app does not treat it as one.
+
 ## Chat - talk to the agent
 
 Open **Chat**.
@@ -121,6 +197,8 @@ Open **Chat**.
 - **New session** starts a conversation.
 - Pick an existing session from the sidebar to resume it.
 - Type and send. Replies stream in token by token as the server produces them.
+- Type while a reply is still arriving and it **steers** - it joins the running turn instead of
+  interrupting it. Set it to **Queue** instead in Settings if you prefer.
 
 What you will see inline:
 
@@ -167,7 +245,7 @@ server whose password does not match. If you still see it, open Termux and run
 No route. Open **Guard** and run **Repair (one tap)**. Nothing was deleted.
 
 **Step 4 says `nothing downloaded yet` and never changes**
-Storage is not involved any more. 1.0.95 hands the scripts to Termux over loopback, so there is no
+Storage is not involved. The app hands the scripts to Termux over loopback, so there is no
 permission to grant and no folder to point at. If it still stalls, Termux has no route for its own
 downloads: switch between Wi-Fi and mobile data, then tap the button again. Nothing was fetched yet,
 so nothing is half-installed.
@@ -178,22 +256,30 @@ failed verification once usually passes on the second attempt. If it fails on th
 the tunnel is up but the exit is not verified - rotate the `/64` and repair again.
 
 **Replies stop mid-answer**
-The app watches for a dead stream and recovers on its own. If the turn ends without an answer,
-send again; the session state is on the server, not in the app.
+The app watches for a dead stream and recovers on its own. If a turn ends without an answer, send
+again; the session state is on the server, not in the app.
+
+**"Free usage limit reached"**
+That is the provider's own budget for the free tier, and it clears on a clock - not by changing
+your address. The app holds your prompt and continues by itself when the window opens; the card
+shows how long is left. Changing your `/64` will not shorten it.
 
 ---
 
 ## What's inside
 
 - Streaming chat with tool calls, diffs, file rows and permissions
+- Steer or queue while the agent is working, following your setting
 - Terminal / PTY tab with an xterm-compatible renderer
 - Guard: connect, disconnect, rotate `/64`, one-tap repair that proves every stage
 - Warm pool of registered WARP identities
+- Compaction at the engine's own ceiling, so a long conversation keeps going
 - Exact-size progress for Termux unpacking, the guard lane and the engine archive
 - Engine scripts handed to Termux over loopback - no storage permission required
 - OpenCode account sign-in (device code) from the quota card
 - Background shells - move running work away without stopping it
 - Session export / import, 1 GB per file, unlimited count
+- In-app update check with a verified download and a version label on every screen
 - In-app notifications only, by design
 
 ## Notes
@@ -206,8 +292,17 @@ send again; the session state is on the server, not in the app.
   offered to the installer.
 - Not affiliated with OpenCode, Cloudflare, or any other project named here.
 
+## Support
+
+ZappCode is free and has no subscription, no ads, and no account of its own. The release channel
+and the relay cost money to run; if the app saves you time, a donation keeps them alive.
+
+- **Donate:** see the **Support** section inside the app (About, and the update dialog).
+- **Discord:** https://discord.gg/RQ6NVspT2u
+- **Bugs and requests:** [Issues](../../issues)
+
 ## Community
 
 Discord: **https://discord.gg/RQ6NVspT2u**
 
-Bugs and requests: [Issues](../../issues).
+That is the fastest place to report a bug, ask for a build, or find out when the next release lands.
