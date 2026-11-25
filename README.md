@@ -13,9 +13,10 @@ the APK, its bundled Termux and the engine archive.
 **[Download the latest ZappCode](../../releases/latest)**
 
 ```
-version   1.0.167  (versionCode 167)
-size      134821591 B
-sha256    5443b0eae5d1e51ee14630304c65cca9471e8a8cb4400b25385b182122fadee8
+version   1.0.174  (versionCode 174)
+size      134831903 B
+sha256    d9b1325e3786737f2bfad438d4a19eadf1c58a93cef529d7ccafb0aad3ce0d77
+md5       133aac0ba28f7db02889d4e285d75aae
 signer    CN=ZappCode  (private key - not the shared Android debug key)
 termux    F-Droid 0.118.3 bundled   113 880 067 B
 engine    fetched on first run      121 172 970 B
@@ -49,20 +50,47 @@ exists. It never installs anything behind your back.
 - A download is discarded unless its SHA-256 matches the hash published in the release notes, so a
   cut-off or swapped file never reaches the installer.
 
-## What's new in 1.0.167
+## What's new in 1.0.174
 
-### The free limit is a clock, not an address
+### The free limit belongs to the address
 
-A free-tier refusal is an account-level budget, not a property of the network address you are on. The
-app used to treat it as an address problem and rotate the tunnel every time it appeared, which bought
-nothing and cost an identity each time. Measured on one evening: two different `/64`s refused twelve
-minutes apart, roughly four hours stated on both, and not one completed reply in between.
+A free-tier refusal is metered against the egress `/64` the request left from. Two different
+prefixes have two different budgets, and the app measures both:
 
-- A free-limit refusal that states a window longer than 15 minutes is now held, not hopped. The
-  prompt is kept and continues by itself when the stated window passes.
-- The automatic resume reads that same window and does nothing until it opens, instead of firing
-  every five seconds into a refusal it cannot win.
+- The stated window is stored **with the prefix that earned it**. When a hop installs a proven
+  fresh address, the held prompt continues immediately instead of waiting out a window that
+  belongs to an address it is no longer using.
+- The clock is written the moment a refusal is seen, before any other path can return, so the
+  automatic resume can never resend into the same wall it is already waiting on.
+- A refusal that states a window longer than 15 minutes is a **clock**, and a clock is waited
+  out on that prefix. A refusal inside the compaction band is a **size** wall, and a size wall
+  compacts. Neither one hops.
 - Your own taps are never gated. Only the automatic resend waits.
+
+### Five proven slots, unlimited parked supply
+
+The reserve is back to the shape that behaved: **five** proven identities, and a parked queue
+that is not capped. Parking is a registration - one HTTPS round trip that never touches the
+tunnel - so the supply can grow while a reply streams. Proving wears an identity and rebuilds
+the interface, so it happens only when no turn is live, no verify is in flight, and fewer than
+five slots are proven.
+
+```
+[pool] prove skipped: reserve 5/5 (proofs 0m,18m,24m,26m,45m) is full
+```
+
+### Verified on open
+
+A proof is stored with the identity that earned it and restored at launch. Reopening the app on
+the same registration shows the tunnel as verified immediately, instead of spending the first
+seconds on "verifying".
+
+### Two ways out of a long turn
+
+- **Jump to latest** returns to the live end. Both pills read the scroll layout, not a remembered
+  intent, so a list that was already overflowing when a turn began still follows the bottom.
+- **Thinking** floats at the top: one tap goes to the start of the current turn, where the
+  reasoning row begins; a second tap goes to the start of the conversation.
 
 ### "Verified" but nothing arrives
 
@@ -84,8 +112,9 @@ identity rebuilds in 68 seconds on one launch, with the screen stuck on "verifyi
   made it infinite.
 - Re-rolling the *edge* to escape a used *`/64`* is gone. The `/64` is bound to the tunnel interface,
   not to the edge, so that could never have worked.
-- While a free-limit window is open, no prefix is treated as used up - the address was never the
-  problem.
+- While a stated free-limit window is open, a refused prefix is not re-rolled: the window is
+  waited out on the prefix that earned it, and a hop that installs a proven fresh address
+  resumes the held prompt instead of waiting for a window that no longer applies.
 
 ### Steering
 
