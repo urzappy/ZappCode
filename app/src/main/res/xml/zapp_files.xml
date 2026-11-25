@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Only what the installer needs: the verified Termux APK in the cache dir. Nothing else
+     is exposed, so a granted URI cannot read app data or the lane scripts. -->
+<paths>
+    <cache-path name="termux" path="termux/" />
+</paths>

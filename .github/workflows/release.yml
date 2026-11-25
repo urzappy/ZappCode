@@ -1,0 +1,244 @@
+name: release
+
+# Builds, signs and publishes ZappCode entirely in the cloud.
+# Trigger it from Actions -> release -> Run workflow, or push a v* tag.
+# No PC is involved after the one-time secrets setup.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_name:
+        description: 'versionName (e.g. 1.0.96)'
+        required: true
+      version_code:
+        description: 'versionCode - must be higher than the installed build'
+        required: true
+      notes:
+        description: 'Release notes (markdown). Blank = auto-generated.'
+        required: false
+        default: ''
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  GRADLE_VERSION: '8.14.5'
+  # Bundled Termux. Not in git (113 MB > GitHub file limit), so CI fetches the pinned asset.
+  TERMUX_URL: 'https://github.com/urzappy/ZappCode/releases/download/v1.0.95/termux-0.118.3.apk'
+  TERMUX_SHA256: 'e6265a57eb5ca363808488e3b01955958bed93bc0c8a0d281849b363b11027ec'
+  # The only certificate Android will accept as an update over an installed ZappCode.
+  SIGNER_SHA256: 'fcd4f9ace6394438827050648bc721a98d7e523be412493ec35263e48df5d1c0'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      # The runner image ships the SDK here. Using it directly avoids
+      # android-actions/setup-android, whose v3 build aborted on 2026-11-25 with
+      # "The process '.../sdkmanager' failed with exit code 1" before any build step ran.
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      ANDROID_HOME: /usr/local/lib/android/sdk
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Android SDK
+        run: |
+          set -euo pipefail
+          SDK="${ANDROID_SDK_ROOT}"
+          SDKM="$SDK/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$SDKM" ]; then
+            SDKM=$(find "$SDK/cmdline-tools" -name sdkmanager -type f 2>/dev/null | sort -V | tail -1)
+          fi
+          echo "sdkmanager: $SDKM"
+          # --sdk_root is required: without it cmdline-tools 20.0 resolves the root to its own
+          # parent and exits 1, which is exactly what killed the previous run.
+          yes | "$SDKM" --sdk_root="$SDK" --licenses > /dev/null 2>&1 || true
+          if [ ! -d "$SDK/platforms/android-36" ]; then
+            yes | "$SDKM" --sdk_root="$SDK" "platforms;android-36" > /dev/null
+          fi
+          if ! ls "$SDK"/build-tools/*/apksigner > /dev/null 2>&1; then
+            yes | "$SDKM" --sdk_root="$SDK" "build-tools;36.0.0" > /dev/null
+          fi
+          echo "platforms:"; ls "$SDK/platforms"
+          echo "build-tools:"; ls "$SDK/build-tools"
+
+      - name: Gradle ${{ env.GRADLE_VERSION }}
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: ${{ env.GRADLE_VERSION }}
+
+      - name: Resolve version
+        env:
+          IN_NAME: ${{ inputs.version_name }}
+          IN_CODE: ${{ inputs.version_code }}
+        run: |
+          set -euo pipefail
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            TAG="${GITHUB_REF_NAME}"
+            echo "Using the tag that triggered this run: ${TAG}"
+          else
+            if [ -z "${IN_NAME}" ] || [ -z "${IN_CODE}" ]; then
+              echo "::error::version_name and version_code are required for a manual run"
+              exit 1
+            fi
+            TAG="v${IN_NAME}"
+          fi
+          if [ -n "${IN_NAME}" ]; then
+            sed -i -E "s/versionName = \"[^\"]+\"/versionName = \"${IN_NAME}\"/" app/build.gradle.kts
+          fi
+          if [ -n "${IN_CODE}" ]; then
+            sed -i -E "s/versionCode = [0-9]+/versionCode = ${IN_CODE}/" app/build.gradle.kts
+          fi
+          echo "TAG=${TAG}" >> "$GITHUB_ENV"
+          echo "Building:"
+          grep -nE 'versionCode|versionName' app/build.gradle.kts
+
+      - name: Signing key
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "${KEYSTORE_B64:-}" ]; then
+            echo "::error::ANDROID_KEYSTORE_B64 is not set. Without the release key the build"
+            echo "::error::would fall back to the debug key and no user could install it."
+            exit 1
+          fi
+          echo "${KEYSTORE_B64}" | base64 -d > app/release.jks
+          # storeFile is resolved relative to the app module, hence app/release.jks.
+          cat > keystore.properties <<EOF
+          storeFile=release.jks
+          storePassword=${STORE_PASSWORD}
+          keyAlias=${KEY_ALIAS}
+          keyPassword=${KEY_PASSWORD}
+          EOF
+          chmod 600 app/release.jks keystore.properties
+
+      - name: Bundled Termux (pinned)
+        run: |
+          set -euo pipefail
+          mkdir -p app/src/main/assets/termux
+          curl -fsSL --retry 3 -o app/src/main/assets/termux/termux.apk "${TERMUX_URL}"
+          echo "${TERMUX_SHA256}  app/src/main/assets/termux/termux.apk" | sha256sum -c -
+
+      - name: Build release APK
+        run: gradle :app:assembleRelease --no-daemon --stacktrace
+
+      - name: Verify APK
+        run: |
+          set -euo pipefail
+          APK=app/build/outputs/apk/release/app-release.apk
+          test -f "${APK}"
+          APKSIGNER=$(find "$ANDROID_SDK_ROOT/build-tools" -name apksigner | sort -V | tail -1)
+          "${APKSIGNER}" verify --print-certs "${APK}" | tee signer.txt
+          if ! grep -qi "${SIGNER_SHA256}" signer.txt; then
+            echo "::error::APK is NOT signed by the ZappCode release certificate."
+            echo "::error::An APK with this signature cannot update an installed ZappCode."
+            exit 1
+          fi
+          SIZE=$(stat -c %s "${APK}")
+          SHA=$(sha256sum "${APK}" | cut -d' ' -f1)
+          echo "${SHA}  ${APK}" > apk.sha256
+          echo "APK size ${SIZE} B"
+          echo "APK sha256 ${SHA}"
+          echo "APK_SIZE=${SIZE}" >> "$GITHUB_ENV"
+          echo "APK_SHA=${SHA}" >> "$GITHUB_ENV"
+
+      - name: Source archive
+        run: |
+          set -euo pipefail
+          # Secrets out of the tree BEFORE archiving, then again by exclusion.
+          rm -f app/release.jks keystore.properties
+          # The archive MUST be written outside the directory being archived. Writing it into "."
+          # makes tar read its own growing output: "tar: .: file changed as we read it" -> exit 1,
+          # which is exactly how run 45544240395 failed after a successful signed build.
+          OUT="$RUNNER_TEMP/source.tar.gz"
+          LIST="$RUNNER_TEMP/source.list"
+          tar -czf "$OUT" \
+            --exclude=./.git --exclude=./.kotlin --exclude=./.gradle --exclude=./build \
+            --exclude=./app/build --exclude=./node_modules --exclude=./captures \
+            --exclude=./keystore.properties --exclude=./local.properties \
+            --exclude=./app/release.jks --exclude=./app/src/main/assets/termux \
+            --exclude=./source.tar.gz --exclude='*.part' .
+          tar -tzf "$OUT" > "$LIST"
+          if grep -Eq 'keystore\.properties|local\.properties|\.git/|termux\.apk|\.jks$|id_rsa' "$LIST"; then
+            echo "::error::Source archive contains a secret or the bundled APK:"
+            grep -E 'keystore\.properties|local\.properties|\.git/|termux\.apk|\.jks$|id_rsa' "$LIST"
+            exit 1
+          fi
+          mv "$OUT" source.tar.gz
+          mv "$LIST" source.list
+          echo "Source archive: $(stat -c %s source.tar.gz) B, $(wc -l < source.list) entries, scanned clean"
+          echo "SRC_SHA=$(sha256sum source.tar.gz | cut -d' ' -f1)" >> "$GITHUB_ENV"
+
+      - name: Release notes
+        env:
+          IN_NOTES: ${{ inputs.notes }}
+        run: |
+          set -euo pipefail
+          if [ -n "${IN_NOTES}" ]; then
+            printf '%s\n' "${IN_NOTES}" > notes.md
+          else
+            cat > notes.md <<EOF
+          ZappCode ${TAG#v}
+
+          APK: ${APK_SIZE} B
+          sha256: ${APK_SHA}
+
+          Install over the previous version. Do not uninstall first - uninstalling deletes
+          sessions and the engine inside Termux.
+          EOF
+          fi
+          cat notes.md
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          APK=app/build/outputs/apk/release/app-release.apk
+          if gh release view "${TAG}" > /dev/null 2>&1; then
+            gh release upload "${TAG}" "${APK}" source.tar.gz --clobber
+            gh release edit "${TAG}" --title "ZappCode ${TAG}" --notes-file notes.md --latest
+          else
+            gh release create "${TAG}" "${APK}" source.tar.gz \
+              --title "ZappCode ${TAG}" --notes-file notes.md --latest
+          fi
+          gh release view "${TAG}" --json assets,url \
+            --jq '.url, (.assets[] | "\(.name)  \(.size) B  \(.state)")'
+
+      - name: Verify the published asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          URL=$(gh release view "${TAG}" --json assets --jq '.assets[] | select(.name | endswith(".apk")) | .url')
+          LEN=$(curl -fsSL -o /dev/null -w '%{size_download}' "${URL}")
+          echo "downloaded ${LEN} B from the release"
+          if [ "${LEN}" != "${APK_SIZE}" ]; then
+            echo "::error::published APK size ${LEN} != built size ${APK_SIZE}"
+            exit 1
+          fi
+          echo "Published asset matches the build."
+
+      - name: Always remove the key
+        if: always()
+        run: rm -f app/release.jks keystore.properties

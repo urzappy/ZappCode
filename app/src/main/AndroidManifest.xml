@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- The engine runs inside Termux, and the APK ships inside this app, so ZAPP has to be
+         allowed to hand an installer a package. The OS still shows its own "allow from this
+         source" switch on first use; this permission only makes the request possible. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- Drive Termux via its RUN_COMMAND service (brain installer/controller) -->
+    <uses-permission android:name="com.termux.permission.RUN_COMMAND" />
+    <!-- Shizuku: the server runs as uid shell and hands us a binder. The permission below is
+         declared by Shizuku itself; we only ask for it, and he approves once on his screen. -->
+    <uses-permission android:name="moe.shizuku.manager.permission.API_V23" />
+
+    <application
+        android:name=".ZappApp"
+        android:label="ZappCode"
+        android:extractNativeLibs="true"
+        android:icon="@mipmap/ic_launcher"
+        android:theme="@style/Theme.ZappNet"
+        android:allowBackup="false"
+        android:usesCleartextTraffic="true">
+
+        <!-- Hands the bundled Termux APK to the system installer. Scoped to cache/termux/ only,
+             so a URI granted to the installer cannot reach app data or the lane scripts. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.files"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/zapp_files" />
+        </provider>
+
+        <!-- Required by the Shizuku client: the server reads our uid through this provider. -->
+        <provider
+            android:name="rikka.shizuku.ShizukuProvider"
+            android:authorities="${applicationId}.shizuku"
+            android:multiprocess="false"
+            android:enabled="true"
+            android:exported="true"
+            android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- The WARP tunnel: routes only Termux (opencode serve) through Cloudflare -->
+        <service
+            android:name=".vpn.ZappVpnService"
+            android:exported="false"
+            android:permission="android.permission.BIND_VPN_SERVICE"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Keeps an encrypted tunnel up so the local OpenCode server can reach its AI provider through rotating Cloudflare /64 identities." />
+            <intent-filter>
+                <action android:name="android.net.VpnService" />
+            </intent-filter>
+        </service>
+
+        <!-- Autostart the guard + server watcher after boot -->
+        <receiver
+            android:name=".guard.BootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
+        <service
+            android:name=".guard.GuardForegroundService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse" />
+
+        <!-- adb -> Termux command bridge (debug lane for the brain installer) -->
+        <receiver
+            android:name=".termux.CmdRelay"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.zapp.net.RELAY" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Termux -> app egress report: only Termux rides the tunnel, so it is the
+             only process that can say which /64 Cloudflare actually sees us on -->
+        <receiver
+            android:name=".termux.EgressReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.zapp.net.EGRESS" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Termux's RUN_COMMAND result bundle lands here. Not exported on purpose: a
+             PendingIntent is delivered under the identity of the app that created it, so
+             Termux can answer us without anything else on the phone being able to. -->
+        <receiver
+            android:name=".termux.TermuxProbeReceiver"
+            android:exported="false" />
+
+        <!-- Outside handle on the tunnel (start / hop). The activity extras route is
+             not reliable: a delivered onNewIntent never fires. -->
+        <receiver
+            android:name=".guard.VpnRelay"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.zapp.net.VPN" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Shizuku loads this class inside its own server process (uid shell) and calls
+             onBind. Not exported: only the server, which reads our uid through the
+             ShizukuProvider declared above, may reach it. -->
+        <service
+            android:name=".shizuku.UserServiceHost"
+            android:exported="false"
+            tools:ignore="Instantiatable" />
+    </application>
+</manifest>

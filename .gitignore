@@ -1,0 +1,58 @@
+# ---- Never publish agent instructions ----
+/AGENTS.md
+AGENTS.md
+
+# ---- Gradle / Kotlin build output ----
+.gradle/
+.kotlin/
+build/
+app/build/
+captures/
+.cxx/
+.externalNativeBuild/
+
+# ---- Local machine config, never publish ----
+local.properties
+*.jks
+*.keystore
+keystore.properties
+signing.properties
+*.p12
+*.pfx
+
+# ---- IDE ----
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.swp
+
+# ---- OS noise ----
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- Reference material we study but do not ship ----
+# `reference/` holds third-party code kept only to compare behaviour.
+# It is not ours, it is not part of the app, and it must never be pushed.
+reference/
+
+# ---- Local scratch ----
+tools/
+*.log
+*.out
+*.hprof
+*.apk
+*.aab
+*.idsig
+
+# ---- Editor / tool backups ----
+*.bak
+*.orig
+*.rej
+*.tmp
+*.old
+
+# ---- Assets that are generated or machine-specific ----
+app/src/main/assets/__pycache__/

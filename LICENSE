@@ -1,0 +1,55 @@
+ZAPP LICENSE
+Version 1.0
+
+Copyright (c) 2026 Kovak. All rights reserved.
+
+This license covers ZAPP-Net and every file in this repository that does not
+carry its own notice.
+
+---
+
+1. PERMISSION
+
+You may read this source code, build it for yourself, and run it on devices you
+own. That is the whole of the grant. Nothing here transfers ownership of the
+work, the name, or the marks.
+
+2. WHAT YOU MAY NOT DO
+
+   a. You may not sell it, rent it, or bundle it into anything sold.
+   b. You may not publish a modified build under the ZAPP name or any name that
+      suggests it came from this project.
+   c. You may not strip this license or the copyright notice from any copy.
+   d. You may not use it to run a paid service for other people.
+
+3. NO ACCOUNT ABUSE
+
+This software is a client. It does not grant you an account, a subscription, a
+credit balance, or a right to any provider's service. Rotating a network
+identity does not rotate an account, and nothing in this repository is a claim
+that it does. Whatever terms apply to the service you point this at are yours to
+keep, not this project's to break for you.
+
+4. THIRD PARTY
+
+This project speaks to an OpenCode server and drives Cloudflare WARP. Neither is
+affiliated with it. Their code, their names and their marks belong to them. Any
+third-party component keeps its own license.
+
+5. NO WARRANTY
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHOR BE
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+6. TERMINATION
+
+The permission in section 1 ends the moment you break section 2 or 3. On
+termination you must stop using the software and delete every copy you built.
+
+---
+
+Written by Kovak. Not derived from any other project's license text.
